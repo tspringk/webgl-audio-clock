@@ -1,3 +1,14 @@
+/*!
+ * Audio Clock for WebGL Assignment
+ *
+ * Copyright 2017 Takayasu Beharu
+ * Released under the MIT license
+ * http://jquery.org/license
+ * Date: 2017-05-19
+ */
+
+'use strict';
+
 var WebGLMyApps = WebGLMyApps || {};
 WebGLMyApps.Module = WebGLMyApps.Module || {};
 WebGLMyApps.Module.View = WebGLMyApps.Module.View || {};
@@ -34,8 +45,7 @@ WebGLMyApps.Module.Utils = WebGLMyApps.Module.Utils || {};
     {
       let _props = {
         level: this.audioController.update(),
-        time: this.timerController.getCurrentTime(),
-        music: this.audioController.getInfo()
+        time: this.timerController.getCurrentTime()
       };
 
       this.threejsViewController.update(_props);
@@ -53,14 +63,16 @@ WebGLMyApps.Module.Utils = WebGLMyApps.Module.Utils || {};
 
     onLoad(e)
     {
-      this.threejsViewController = WebGLMyApps.Module.ThreejsViewController.getInstance();
       this.audioController = new WebGLMyApps.Module.Utils.AudioController();
-      this.timerController = new WebGLMyApps.Module.Utils.TimerController();
       this.infomationController = new WebGLMyApps.Module.OverlayInformationViewController();
 
-      this.audioController.onLoad(e);
-
-      this.init();
+      this.audioController.init(()=>
+      {
+        this.audioController.addMusicChangedEvent(this.infomationController, this.infomationController.onMusicChangedHandler);
+        this.threejsViewController = WebGLMyApps.Module.ThreejsViewController.getInstance();
+        this.timerController = new WebGLMyApps.Module.Utils.TimerController();
+        this.init();
+      });
     }
 
     onResize(e)
@@ -440,8 +452,8 @@ WebGLMyApps.Module.View.TimerView = (()=>
       
       const MATERIAL_PARAMETER = {
         blending: THREE.NormalBlending,
-        color: 0xffffff,
-        opacity: 1,
+        color: 0xffeedd,
+        opacity: 0.8,
         transparent: true
       };
       const _scale = 4;
@@ -477,7 +489,7 @@ WebGLMyApps.Module.View.TimerView = (()=>
       this.timerController.update();
       _texture = this.timerController.getViewAsTexture();
       
-      this.view.material.opacity -= 0.05;
+      this.view.material.opacity -= 0.04;
 
       if(_texture != null)
       {
@@ -493,6 +505,7 @@ WebGLMyApps.Module.View.TimerView = (()=>
       const _velocity = {
         position: new THREE.Vector3(0, 0, 0),
         rotation: new THREE.Vector3(
+          // this.acceleration / 20,
           0,
           this.acceleration / 20,
           0
@@ -640,6 +653,7 @@ WebGLMyApps.Module.Utils.AudioController = ((AudioContext) =>
       super();
 
       this.enable = false;
+      this.isLoading = true;
       this.level = 0;
       this.audioProps = {
         sourceRoot: './assets/audio/',
@@ -677,6 +691,12 @@ WebGLMyApps.Module.Utils.AudioController = ((AudioContext) =>
       this.analyser = this.context.createAnalyser();
       this.analyser.fftSize = 256;
       this.analyser.connect(this.context.destination);
+      this.onMusicChanged = ()=>{};
+    }
+
+    init(_callback)
+    {
+      this.loadAsset(0, true, _callback);
     }
 
     getLevel()
@@ -702,6 +722,11 @@ WebGLMyApps.Module.Utils.AudioController = ((AudioContext) =>
       };
       _request.open('GET', _url, true);
       _request.send('');
+    }
+
+    addMusicChangedEvent(_sender, _callback)
+    {
+      this.onMusicChanged = _callback.bind(_sender);
     }
 
     play(_buffer)
@@ -735,12 +760,7 @@ WebGLMyApps.Module.Utils.AudioController = ((AudioContext) =>
       return _level;
     }
 
-    onLoad(e)
-    {
-      this.loadAsset(0);
-    }
-
-    loadAsset(_index = 0, _isAutoPlay = true)
+    loadAsset(_index = 0, _isAutoPlay = true, _callback = null)
     {
       const { sourceRoot, musicList } = this.audioProps;
       
@@ -749,13 +769,21 @@ WebGLMyApps.Module.Utils.AudioController = ((AudioContext) =>
         this.audioProps.current = _index = 0;
       }
 
+      this.isLoading = true;
+
       this.getAudioBuffer(sourceRoot + musicList[_index].source, (_buffer)=>
       {
         this.enable = true;
+        this.isLoading = false;
         if(_isAutoPlay)
         {
           this.play(_buffer);
         }
+        if(_callback != null)
+        {
+          _callback();
+        }
+        this.onMusicChanged(this.audioProps.musicList[this.audioProps.current]);
       });      
     }
 
@@ -766,13 +794,10 @@ WebGLMyApps.Module.Utils.AudioController = ((AudioContext) =>
 
     onKeyDown(e)
     {
-      if(e.keyCode === 32)
+      if(e.keyCode === 32 && !this.isLoading)
       {
         this.loadAsset(++this.audioProps.current);
-        return this.getInfo();
       }
-
-      return null;
     }
 };
 })(window.AudioContext || window.webkitAudioContext);
@@ -811,15 +836,11 @@ WebGLMyApps.Module.OverlayInformationViewController = (()=>
       if(_props == null){ return; }
 
       this.info.time.textContent = _props.time;
-      this.info.music.textContent = `${_props.music.name} / ${_props.music.author}`;     
     }
 
-    // updateMusicInfo(_props = null)
-    // {
-    //   if(_props == null){ return; }
-
-    //   this.info.music.textContent = `[MUSIC] ${_props.name} / ${_props.author}`;     
-    // }
-
+    onMusicChangedHandler(e)
+    {
+      this.info.music.innerHTML = `${e.name} / ${e.author} <a href="${e.url}" target="_blank">(Source from DOVA-SYNDROME)</a>`;     
+    }
   }
 })();
