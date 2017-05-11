@@ -3,7 +3,6 @@
  *
  * Copyright 2017 Takayasu Beharu
  * Released under the MIT license
- * http://jquery.org/license
  * Date: 2017-05-19
  */
 
