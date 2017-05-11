@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja-jp">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Audio Clock ver.0.1.0 | WebGL Lecture201704</title>
+<style>html, body { margin: 0; padding: 0; overflow: hidden; } 
+#webgl { position: fixed; z-index: 100; }
+#info__container { position: fixed; top: auto; bottom: 0%; left: 0%; z-index: 50000; padding: 5%; color: #999; font-family: Arial; font-size: 0.6rem; }
+#info__time { color: #999; font-size: 0.6rem }
+#info__music { color: #ccc; font-size: 0.75rem }
+</style>
+</head>
+<body>
+<div id="webgl"></div>
+<div id="info__container">
+<p id="info__time"></p>
+<p id="info__music"></p>
+<p id="info__instructions">[Mouse] Orbit Camera [ESC] Pause [A] Add Element [D] Remove Element [Space] Change Music</p>
+</div>
+<script src="./lib/three_84.js"></script>
+<script src="./lib/OrbitControls.js"></script>
+<script src="./script.js"></script>
+</body>
+</html>
+
